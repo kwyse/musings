@@ -63,12 +63,12 @@ mod tests {
     #[test]
     fn weight_log_entries_can_be_constructed_with_just_weight() {
         let weight = Weight(76.0);
-        let now = Utc::now().timestamp_millis();
+        let now = Utc::now();
 
         let entry = WeightLogEntry::of(weight);
 
         assert_eq!(entry.weight(), weight);
-        assert!(now - entry.timestamp().timestamp_millis() < 100);
+        assert!(now - entry.timestamp() < Duration::milliseconds(100));
     }
 
     #[test]
