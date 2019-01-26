@@ -7,7 +7,7 @@ use serde::Deserialize;
 use std::fmt;
 use std::io::Read;
 
-#[derive(Debug, Deserialize, Clone, Copy, Eq, PartialEq)]
+#[derive(Debug, Deserialize, Clone, Copy, Eq, Ord, PartialEq, PartialOrd)]
 pub struct Weight(u32);
 
 impl fmt::Display for Weight {
@@ -18,7 +18,7 @@ impl fmt::Display for Weight {
     }
 }
 
-#[derive(Debug, Deserialize, Clone, Copy, Eq, PartialEq)]
+#[derive(Debug, Deserialize, Clone, Copy, Eq, Ord, PartialEq, PartialOrd)]
 pub struct WeightLogEntry {
     weight: Weight,
     timestamp: DateTime<Utc>,
@@ -77,7 +77,7 @@ impl WeightLog {
         &self.0.as_slice()
     }
 
-    fn moving_average(&self, period: usize) -> Vec<WeightLogEntry> {
+    pub fn moving_average(&self, period: usize) -> Vec<WeightLogEntry> {
         self.0.windows(period)
             .map(|window| {
                 let sum: u32 = window.iter().map(|entry| entry.weight().0).sum();
