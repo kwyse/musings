@@ -4,13 +4,20 @@ use csv::Reader;
 use failure::Error;
 use serde::Deserialize;
 
+use std::fmt;
 use std::io::Read;
 
 #[derive(Debug, Deserialize, Clone, Copy, PartialEq)]
-struct Weight(f64);
+pub struct Weight(f64);
+
+impl fmt::Display for Weight {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", self.0)
+    }
+}
 
 #[derive(Debug, Deserialize, Clone, Copy)]
-struct WeightLogEntry {
+pub struct WeightLogEntry {
     weight: Weight,
     timestamp: DateTime<Utc>,
 }
@@ -24,24 +31,24 @@ impl WeightLogEntry {
         Self { weight: self.weight, timestamp }
     }
 
-    fn weight(&self) -> Weight {
+    pub fn weight(&self) -> Weight {
         self.weight
     }
 
-    fn timestamp(&self) -> DateTime<Utc> {
+    pub fn timestamp(&self) -> DateTime<Utc> {
         self.timestamp
     }
 }
 
 #[derive(Debug, Deserialize)]
-struct WeightLog(Vec<WeightLogEntry>);
+pub struct WeightLog(Vec<WeightLogEntry>);
 
 impl WeightLog {
-    fn new() -> Self {
+    pub fn new() -> Self {
         WeightLog(Vec::new())
     }
 
-    fn from_csv(reader: impl Read) -> Result<Self, Error> {
+    pub fn from_csv(reader: impl Read) -> Result<Self, Error> {
         let entries = Reader::from_reader(reader)
             .deserialize::<WeightLogEntry>()
             .collect::<Result<_, _>>()?;
@@ -64,7 +71,7 @@ impl WeightLog {
         }
     }
 
-    fn as_slice(&self) -> &[WeightLogEntry] {
+    pub fn as_slice(&self) -> &[WeightLogEntry] {
         &self.0.as_slice()
     }
 }
