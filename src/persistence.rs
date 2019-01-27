@@ -9,27 +9,25 @@ struct FileOnDisk;
 impl FileOnDisk {
     fn write(contents: &[u8], path: impl AsRef<Path>) -> Result<(), Error> {
         create_parent_dirs_if_needed(&path);
-
-        File::create(path)?
-            .write_all(contents)?;
+        File::create(path)?.write_all(contents)?;
 
         Ok(())
     }
 }
 
 #[derive(Debug, Fail)]
-enum FileOnDiskError {
+enum WriteError {
     #[fail(display = "parent directory does not exist for path: {}", path)]
-    ParentDirDoesNotExist {
+    ParentDoesNotExist {
         path: String,
     }
 }
 
 fn create_parent_dirs_if_needed(path: impl AsRef<Path>) -> Result<(), Error> {
-    let parent_dir = path.as_ref().parent()
-        .ok_or(FileOnDiskError::ParentDirDoesNotExist {
-            path: path.as_ref().to_string_lossy().to_string()
-        })?;
+    let displayable_path = || path.as_ref().to_string_lossy().to_string();
+    let mk_err = || WriteError::ParentDoesNotExist { path: displayable_path() };
+
+    let parent_dir = path.as_ref().parent().ok_or(mk_err())?;
 
     if !parent_dir.exists() {
         fs::create_dir_all(parent_dir)?;
