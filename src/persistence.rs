@@ -1,12 +1,16 @@
 use failure::{Fail, Error};
 
 use std::fs::{self, File};
-use std::io::Write;
-use std::path::{Path, PathBuf};
+use std::io::{Read, Write};
+use std::path::Path;
 
 struct FileOnDisk;
 
 impl FileOnDisk {
+    fn read(path: impl AsRef<Path>) -> Result<impl Read, Error> {
+        Ok(File::open(path)?)
+    }
+
     fn write(contents: &[u8], path: impl AsRef<Path>) -> Result<(), Error> {
         create_parent_dirs_if_needed(&path);
         File::create(path)?.write_all(contents)?;
@@ -40,7 +44,21 @@ fn create_parent_dirs_if_needed(path: impl AsRef<Path>) -> Result<(), Error> {
 mod tests {
     use super::*;
     use std::env;
-    use std::io::Read;
+
+    #[test]
+    fn contents_is_read_from_file_on_disk() {
+        let mut path = env::temp_dir();
+        path.push("file.txt");
+        let mut file = File::create(&path).unwrap();
+        let contents = "file contents";
+        file.write_all(&contents.as_bytes());
+
+        let mut reader = FileOnDisk::read(&path).unwrap();
+
+        let mut read_contents = String::new();
+        reader.read_to_string(&mut read_contents);
+        assert_eq!(read_contents, contents);
+    }
 
     #[test]
     fn contents_is_written_to_file_on_disk() {
@@ -57,7 +75,7 @@ mod tests {
     }
 
     #[test]
-    fn parent_dirs_are_created_if_they_do_not_exist() {
+    fn parent_dirs_are_created_when_writing_if_they_do_not_exist() {
         let mut path = env::temp_dir();
         path.push("dir");
         path.push("file.txt");
