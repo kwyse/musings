@@ -7,18 +7,25 @@ use std::path::{Component, Path};
 
 const TILDE: &str = "~";
 
-pub struct ShellExpander {
+pub trait ShellExpander {
+    fn expand<'a, P>(&self, path: &'a P) -> Result<Cow<'a, Path>, Error>
+    where P: AsRef<Path> + 'a;
+}
+
+pub struct UnixExpander {
     home_dir_var: String
 }
 
-impl ShellExpander {
+impl UnixExpander {
     pub fn new(home_dir_var: &str) -> Self {
         Self {
             home_dir_var: home_dir_var.to_string(),
         }
     }
+}
 
-    pub fn tilde<'a, P>(&self, path: &'a P) -> Result<Cow<'a, Path>, Error>
+impl ShellExpander for UnixExpander {
+    fn expand<'a, P>(&self, path: &'a P) -> Result<Cow<'a, Path>, Error>
     where
         P: AsRef<Path> + 'a,
     {
@@ -44,11 +51,11 @@ mod tests {
 
     #[test]
     fn tildes_at_start_of_path_are_expanded() {
-        let expander = ShellExpander::new("TILDE");
+        let expander = UnixExpander::new("TILDE");
         env::set_var("TILDE", "home");
         let path = "~/some/path";
 
-        let expanded_path = expander.tilde(&path).unwrap();
+        let expanded_path = expander.expand(&path).unwrap();
 
         let expected_path = Path::new("home/some/path").to_path_buf();
         assert_eq!(expanded_path, Cow::from(expected_path));
@@ -56,10 +63,10 @@ mod tests {
 
     #[test]
     fn tildes_not_at_start_of_path_are_ignored() {
-        let expander = ShellExpander::new("");
+        let expander = UnixExpander::new("");
         let path = "some/~/path";
 
-        let expanded_path = expander.tilde(&path).unwrap();
+        let expanded_path = expander.expand(&path).unwrap();
 
         let expected_path = Path::new("some/~/path");
         assert_eq!(expanded_path, Cow::from(expected_path));
